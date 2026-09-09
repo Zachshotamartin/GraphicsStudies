@@ -1,0 +1,12 @@
+{
+  "name": "@zachshotamartin/graphics-studies",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "description": "Interactive image quilting and texture transfer studies after Efros and Freeman (2001).",
+  "license": "MIT",
+  "exports": { ".": "./src/quilting.js", "./worker": "./src/worker.js", "./lab": "./src/lab.js", "./lab.css": "./src/lab.css" },
+  "files": ["src", "README.md", "LICENSE"],
+  "scripts": { "test": "node --test", "start": "node web/serve.mjs" },
+  "engines": { "node": ">=22" }
+}

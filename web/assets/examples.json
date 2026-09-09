@@ -1,0 +1,68 @@
+[
+  {
+    "name": "quilting-result",
+    "source": "foliage",
+    "method": "cut",
+    "options": {
+      "size": 256,
+      "patchSize": 36,
+      "overlap": 6,
+      "candidateCount": 384,
+      "structure": 0.75,
+      "passes": 3,
+      "seed": "42",
+      "method": "cut"
+    },
+    "ms": 311.10000002384186
+  },
+  {
+    "name": "quilting-straight",
+    "source": "foliage",
+    "method": "straight",
+    "options": {
+      "size": 256,
+      "patchSize": 36,
+      "overlap": 6,
+      "candidateCount": 384,
+      "structure": 0.75,
+      "passes": 3,
+      "seed": "42",
+      "method": "straight"
+    },
+    "ms": 276.10000002384186
+  },
+  {
+    "name": "transfer-result",
+    "source": "pebbles",
+    "target": "bust",
+    "method": "cut",
+    "options": {
+      "size": 256,
+      "patchSize": 36,
+      "overlap": 6,
+      "candidateCount": 384,
+      "structure": 0.75,
+      "passes": 3,
+      "seed": "42",
+      "method": "cut"
+    },
+    "ms": 1268.7000000476837
+  },
+  {
+    "name": "transfer-foliage",
+    "source": "foliage",
+    "target": "bust",
+    "method": "cut",
+    "options": {
+      "size": 256,
+      "patchSize": 36,
+      "overlap": 6,
+      "candidateCount": 384,
+      "structure": 0.75,
+      "passes": 3,
+      "seed": "42",
+      "method": "cut"
+    },
+    "ms": 1181.5
+  }
+]
