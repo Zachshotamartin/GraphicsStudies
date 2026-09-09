@@ -1,4 +1,5 @@
 import { getExperiment } from "./catalog.js";
+import { sampleMask, sampleHandles } from "./sample-inputs.js";
 import { drawImage, drawTree, svgStipples, drawStroke } from "./render.js";
 const escape = (s) =>
   String(s).replace(
@@ -32,7 +33,7 @@ export function experimentMarkup({ id, assetsBase = "/assets/studies" } = {}) {
     id === "image-analogies"
       ? '<label>Upload A′ (aligned with A)<input data-upload="filtered" type="file" accept="image/png,image/jpeg,image/webp"></label>'
       : "";
-  return `<div class="experiment-lab__controls">${controls}${upload}${other}${filtered}<div class="experiment-lab__actions"><button type="button" data-run>${id === "stable-fluids" ? "Start simulation" : id === "tree-growth" ? "Grow tree" : "Run experiment"}</button><button type="button" data-cancel disabled>Cancel</button><button type="button" data-reset>Reset</button></div>${["seam-carving", "patchmatch"].includes(id) ? '<button type="button" data-clear-mask>Clear mask</button>' : ""}${id === "image-deformation" ? '<fieldset class="experiment-lab__pins"><legend>Selected pin</legend><label>Pin<select data-pin-select aria-label="Selected pin"></select></label><label>Horizontal position<input data-pin-x type="range" min="0" max="100" value="50"></label><label>Vertical position<input data-pin-y type="range" min="0" max="100" value="50"></label><button type="button" data-add-pin>Add center pin</button><button type="button" data-delete-pin>Remove selected pin</button></fieldset>' : ""}<small>All processing stays in your browser. Image uploads are resized to a ${s.size}px preview${id === "image-analogies" ? " and paired inputs must have matching proportions" : ""}.</small></div><div class="experiment-lab__stage"><p class="experiment-lab__hint">${s.hint}</p><div class="experiment-lab__images ${s.source ? "" : "experiment-lab__images--single"}">${source}${id === "image-analogies" ? `<figure><div class="experiment-lab__surface"><img data-filtered-preview src="${assetsBase}/harbor-painted.webp" alt="A′ · computed painting"><canvas data-filtered-canvas hidden></canvas></div><figcaption>A′ · computed painting</figcaption></figure><figure><div class="experiment-lab__surface"><img data-other-preview src="${assetsBase}/landscape.webp" alt="B · new photograph"><canvas data-other-canvas hidden></canvas></div><figcaption>B · new photograph</figcaption></figure>` : ""}<figure><div class="experiment-lab__surface"><img data-result-preview src="${assetsBase}/${id}-result.webp" alt="Precomputed ${escape(s.title)} example"><canvas data-result hidden aria-label="${escape(s.title)} result"></canvas></div><figcaption data-caption>Computed example · run to make your own</figcaption></figure></div><div class="experiment-lab__tools"><button type="button" data-download disabled>Download PNG</button>${id === "stippling" ? '<button type="button" data-svg disabled>Download SVG</button>' : ""}${id === "painterly-rendering" ? '<button type="button" data-replay disabled>Replay strokes</button>' : ""}${id === "stable-fluids" ? '<button type="button" data-pause disabled>Pause</button>' : ""}${id === "tree-growth" ? '<button type="button" data-skeleton aria-pressed="false">Skeleton</button><button type="button" data-attractors aria-pressed="false">Remaining attraction points</button><button type="button" data-orbit="-1">Rotate left</button><button type="button" data-orbit="1">Rotate right</button>' : ""}${id === "hdr-tone-mapping" ? '<button type="button" data-view="result">Tone mapped</button><button type="button" data-view="base">Base layer</button><button type="button" data-view="detailLayer">Detail layer</button>' : ""}${id === "hybrid-images" ? '<button type="button" data-view="result">Combined</button><button type="button" data-view="low">Low frequency</button><button type="button" data-view="high">High frequency</button>' : ""}${id === "patchmatch" ? '<button type="button" data-mapping aria-pressed="false">Source correspondences</button>' : ""}</div><progress max="1" value="0" aria-label="Experiment progress" hidden></progress><p class="experiment-lab__status" role="status" aria-live="polite" data-status>Ready when you are.</p><p class="experiment-lab__error" role="alert" data-error hidden></p><div class="experiment-lab__extra" data-extra></div><p class="experiment-lab__notice">Worker processing · local inputs · downloadable output</p></div>`;
+  return `<div class="experiment-lab__controls">${controls}${upload}${other}${filtered}<div class="experiment-lab__actions"><button type="button" data-run>${id === "stable-fluids" ? "Start simulation" : id === "tree-growth" ? "Grow tree" : "Run experiment"}</button><button type="button" data-cancel disabled>Cancel</button><button type="button" data-reset>Reset</button></div>${["seam-carving", "patchmatch"].includes(id) ? '<button type="button" data-clear-mask>Clear mask</button>' : ""}${id === "image-deformation" ? '<fieldset class="experiment-lab__pins"><legend>Selected pin</legend><label>Pin<select data-pin-select aria-label="Selected pin"></select></label><label>Horizontal position<input data-pin-x type="range" min="0" max="100" value="50"></label><label>Vertical position<input data-pin-y type="range" min="0" max="100" value="50"></label><button type="button" data-add-pin>Add center pin</button><button type="button" data-delete-pin>Remove selected pin</button></fieldset>' : ""}<small>All processing stays in your browser. Image uploads are resized to a ${s.size}px preview${id === "image-analogies" ? " and paired inputs must have matching proportions" : ""}.</small></div><div class="experiment-lab__stage"><p class="experiment-lab__hint">${s.hint}</p><div class="experiment-lab__images ${s.source ? "" : "experiment-lab__images--single"}">${source}${id === "image-analogies" ? `<figure><div class="experiment-lab__surface"><img data-filtered-preview src="${assetsBase}/${s.filtered}.${s.filteredExtension || "webp"}" alt="A′ · registered engraving"><canvas data-filtered-canvas hidden></canvas></div><figcaption>A′ · registered engraving</figcaption></figure><figure><div class="experiment-lab__surface"><img data-other-preview src="${assetsBase}/${s.other}.webp" alt="B · new photograph"><canvas data-other-canvas hidden></canvas></div><figcaption>B · new photograph</figcaption></figure>` : ""}<figure><div class="experiment-lab__surface"><img data-result-preview src="${assetsBase}/${id}-result.webp" alt="Precomputed ${escape(s.title)} example"><canvas data-result hidden aria-label="${escape(s.title)} result"></canvas></div><figcaption data-caption>Computed example · run to make your own</figcaption></figure></div><div class="experiment-lab__tools"><button type="button" data-download disabled>Download PNG</button>${id === "stippling" ? '<button type="button" data-svg disabled>Download SVG</button>' : ""}${id === "painterly-rendering" ? '<button type="button" data-replay disabled>Replay strokes</button>' : ""}${id === "stable-fluids" ? '<button type="button" data-pause disabled>Pause</button>' : ""}${id === "tree-growth" ? '<button type="button" data-skeleton aria-pressed="false">Skeleton</button><button type="button" data-attractors aria-pressed="false">Remaining attraction points</button><button type="button" data-orbit="-1">Rotate left</button><button type="button" data-orbit="1">Rotate right</button>' : ""}${id === "hdr-tone-mapping" ? '<button type="button" data-view="result">Tone mapped</button><button type="button" data-view="base">Base layer</button><button type="button" data-view="detailLayer">Detail layer</button>' : ""}${id === "hybrid-images" ? '<button type="button" data-view="result">Combined</button><button type="button" data-view="low">Low frequency</button><button type="button" data-view="high">High frequency</button>' : ""}${id === "patchmatch" ? '<button type="button" data-mapping aria-pressed="false">Source correspondences</button>' : ""}</div><progress max="1" value="0" aria-label="Experiment progress" hidden></progress><p class="experiment-lab__status" role="status" aria-live="polite" data-status>Ready when you are.</p><p class="experiment-lab__error" role="alert" data-error hidden></p><div class="experiment-lab__extra" data-extra></div><p class="experiment-lab__notice">Worker processing · local inputs · downloadable output</p></div>`;
 }
 
 async function readImage(url, size) {
@@ -234,32 +235,11 @@ export function mountExperiment(
   }
   function initSource() {
     if (!source) return;
-    mask = new Uint8Array(source.width * source.height);
-    protectMask = new Uint8Array(mask.length);
-    if (id === "patchmatch")
-      for (
-        let y = Math.floor(source.height * 0.6);
-        y < source.height * 0.7;
-        y++
-      )
-        for (
-          let x = Math.floor(source.width * 0.744);
-          x < source.width * 0.792;
-          x++
-        )
-          mask[y * source.width + x] = 1;
+    mask = sampleMask(source, customA ? [] : s.maskRegions);
+    protectMask = sampleMask(source, customA ? [] : s.protectRegions);
     if (id === "image-deformation") {
-      handles = [
-        [0.18, 0.18],
-        [0.82, 0.18],
-        [0.18, 0.82],
-        [0.82, 0.82],
-        [0.5, 0.5],
-      ].map(([x, y]) => ({
-        from: [x * source.width, y * source.height],
-        to: [x * source.width, y * source.height],
-      }));
-      selected = 4;
+      handles = sampleHandles(source, customA ? null : s.pins);
+      selected = Math.min(s.examplePin?.index ?? 4, handles.length - 1);
       result = null;
       showPins();
     }
@@ -289,7 +269,7 @@ export function mountExperiment(
       }
       if (id === "image-analogies" && !filtered && !customA) {
         const image = await readImage(
-          `${assetsBase}/harbor-painted.webp`,
+          `${assetsBase}/${s.filtered}.${s.filteredExtension || "webp"}`,
           s.size,
         );
         if (version !== loadVersion) return;
@@ -544,6 +524,7 @@ export function mountExperiment(
           const image = await blobImage(file, s.size);
           if (el.dataset.upload === "source") {
             source = image;
+            customA = true;
             initSource();
             if (id === "image-analogies") {
               filtered = null;

@@ -1,0 +1,37 @@
+{
+  "tool": "built-in image_gen",
+  "assets": [
+    {
+      "name": "stippling-shell",
+      "prompt": "Photorealistic natural macro source photograph for a weighted stippling computer graphics experiment. A single beautiful whole spiral nautilus seashell viewed from above, concentric spiral and finely textured radial ridges, warm ivory with dark brown bands, on clean near-white matte paper. Large shell occupies 78 percent of square frame with comfortable white margin on every side, nuanced natural light and short soft contact shadow, crisp detail, rich tonal range. Photograph only, not a drawing, not stippled, no text, no logo, no border. Square image."
+    },
+    {
+      "name": "seam-balloons",
+      "prompt": "Photorealistic source photograph for content aware image resizing. Wide horizontal 3:2 composition, two beautiful colorful hot air balloons floating above a very flat plain, one centered at x25 percent and another at x76 percent. Balloons each occupy about 15 percent of image width and 33 percent of image height. Pale clear blue sky occupies upper80 percent, smooth sandy grassland low horizon occupies bottom20 percent. A large uncluttered low-detail open sky gap between the two balloons. Crisp realistically detailed envelopes and tiny baskets. Peaceful natural daylight. No people, mountains, lettering, watermark, montage or border. A real-looking camera photograph, no digitalillustration."
+    },
+    {
+      "name": "patchmatch-gravel",
+      "prompt": "Photorealistic top-down source photograph for image object removal experiment. Square image, continuous bed of tiny natural gray and muted tan gravel evenly filling the ENTIRE frame. Flat even diffuse daylight, fine stone texture at consistent scale everywhere. One small vivid red reusable water bottle lying on this gravel, vertical in the image, centered at x68 percent y62 percent. The entire bottle including its cap is 14 percent of image height and6 percent of width. Very soft short contact shadow right beneath it. No other objects anywhere, no large rocks, no plants, no writing or brand or labels. This is a real photograph of gravel with one little red bottle, unedited."
+    },
+    {
+      "name": "deformation-leaf",
+      "prompt": "Photorealistic botanical source photograph for interactive meshless image deformation. One individual golden yellow ginkgo leaf with distinctive broad fan shaped foliage, fine radiating veins, two gentle lobes and tiny natural imperfections. Centered flat on pale warm off-white paper, top-down view. Leaf fan occupies x18 to82 percent and y16 to68 percent of square frame; its thin stem points down to y87 percent at centerx. Crisp visible branching veins, natural realistic yellow and green variations, almost shadowless diffuse daylight. Only one leaf. No labels, no text, no otherobjects, no border. Square photograph."
+    },
+    {
+      "name": "analogies-courtyard",
+      "prompt": "Photorealistic architectural source photograph A for a photo-to-engraving example. Frontal view of a compact cream limestone courtyard facade, three rounded arches on ground floor, three tall rectangular windows above, finely jointed stonework, decorative horizontal cornice, shallow front steps and a narrow strip of pale courtyard paving. Building fills frame with clear balanced architecture; almost no sky. Natural overcast daylight, structural detail crisply resolved, muted warm stone and dark window interiors. Classical architecture photography, no people, trees, signs, lettering, watermark or drawn lines. Landscape 3:2 image."
+    },
+    {
+      "name": "analogies-arcade",
+      "prompt": "Photorealistic architectural source photograph B for a photo-to-engraving research demo. Front-facing view of a terracotta and pale sandstone arcade facade with four narrow rounded arch doorways along ground floor, a small balcony and five rectangular windows above, distinct vertical pilasters, finely jointed masonry, pavement at bottom. Building fills frame; almost no sky. Different architecture from a limestone courtyard with three arches. Natural even daylight, crisp geometric edges and visible fine brick texture, dark empty window interiors. No people, plants, signs, text, drawing, watermarks or borders. Landscape 3:2 image."
+    },
+    {
+      "name": "transfer-fabric",
+      "prompt": "Photorealistic flat macro texture source for patch-based image texture transfer. Entire square frame filled edge to edge with densely woven natural linen and wool fibers, subtle cream, charcoal gray, slate and oatmeal threads interlacing. Irregular flecks of lighter and darker thread, varied local brightness but no single central subject or large pattern, tight realistic weave and short soft fibers, flat topdown orthographic photograph, uniformly sharp with neutral diffuse lighting. No folds, borders, perspective, seams, labels, buttons, lettering or blankareas."
+    },
+    {
+      "name": "quilting-slate",
+      "prompt": "Photorealistic topdown texture source for seamless image quilting. Entire square image filled edge to edge with small overlapping flakes of dark slate and muted blue gray mineral chips, thin layered craggy surfaces, subtle warm dusty inclusions, consistent small scale across the frame. Broadly uniform texture with interesting local varied natural detail. Flat evenly lit natural material photograph, no perspective, no central subject, no large isolated boulders, no plants, no text, no border, no blankedges."
+    }
+  ]
+}

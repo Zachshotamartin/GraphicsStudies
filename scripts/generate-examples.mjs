@@ -11,6 +11,8 @@ await page.goto(
 );
 const records = await page.evaluate(async () => {
   const { experiments } = await import("/src/experiments/catalog.js");
+  const { sampleMask, sampleHandles } = await import("/src/experiments/sample-inputs.js");
+  const { engraveExample } = await import("/src/algorithms/engraving-example.js");
   const { drawTree, drawImage } = await import("/src/experiments/render.js");
   const { stipple } = await import("/src/algorithms/stippling.js"),
     { paint } = await import("/src/algorithms/painterly.js"),
@@ -51,6 +53,11 @@ const records = await page.evaluate(async () => {
       data: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
     };
   };
+  const overlay = (source,mask,color) => {
+    const data = source.data.slice();
+    for (let i=0;i<mask.length;i++) if(mask[i]) for(let c=0;c<3;c++) data[i*4+c]=data[i*4+c]*.5+color[c]*.5;
+    return {width:source.width,height:source.height,data};
+  };
   const output = [],
     encode = (name, result, params = {}) => {
       const canvas = document.createElement("canvas");
@@ -65,11 +72,6 @@ const records = await page.evaluate(async () => {
         webp: canvas.toDataURL("image/webp", 0.94).split(",")[1],
       });
     };
-  const harbor = await read("harbor", 384),
-    painted = final(
-      paint({ source: harbor, brushSize: 12, detail: 0.65, seed: 42 }),
-    );
-  encode("harbor-painted", painted, { brushSize: 12, detail: 0.65, seed: 42 });
   for (const s of experiments) {
     const params = Object.fromEntries(s.controls.map((c) => [c.key, c.value])),
       source =
@@ -77,82 +79,85 @@ const records = await page.evaluate(async () => {
           ? await read(s.source, s.size)
           : null;
     let result;
+    let resultParams = { ...params, size: s.size, ...(s.source ? {source:s.source} : {}), ...(s.other ? {other:s.other} : {}) };
     if (s.id === "stippling") result = final(stipple({ ...params, source }));
-    if (s.id === "painterly-rendering") result = painted;
-    if (s.id === "seam-carving")
-      result = final(
-        carve({
-          source,
-          targetWidth: Math.round(source.width * params.widthRatio),
-        }),
-      );
+    if (s.id === "painterly-rendering") result = final(paint({ ...params, source }));
+    if (s.id === "seam-carving") {
+      const protectMask = sampleMask(source, s.protectRegions);
+      const targetWidth = Math.round(source.width * params.widthRatio);
+      result = final(carve({ source, targetWidth, protectMask }));
+      resultParams = { ...resultParams, source: s.source, protectRegions: s.protectRegions, targetWidth };
+      const original = document.createElement("canvas"), resized = document.createElement("canvas");
+      drawImage(original, source);
+      resized.width = targetWidth; resized.height = source.height;
+      const ctx = resized.getContext("2d"); ctx.drawImage(original,0,0,targetWidth,source.height);
+      encode(`${s.id}-resized`, { width: targetWidth, height: source.height, data:ctx.getImageData(0,0,targetWidth,source.height).data }, { method:"uniform resize", source:s.source,targetWidth });
+      encode(`${s.id}-mask`, overlay(source, protectMask, [118,205,125]), { source:s.source,protectRegions:s.protectRegions });
+    }
     if (s.id === "patchmatch") {
-      const mask = new Uint8Array(source.width * source.height);
-      for (
-        let y = Math.floor(source.height * 0.6);
-        y < source.height * 0.7;
-        y++
-      )
-        for (
-          let x = Math.floor(source.width * 0.744);
-          x < source.width * 0.792;
-          x++
-        )
-          mask[y * source.width + x] = 1;
+      const mask = sampleMask(source, s.maskRegions);
       result = final(completeImage({ ...params, source, mask }));
+      resultParams = { ...resultParams, source:s.source,maskRegions:s.maskRegions };
+      encode(`${s.id}-mask`, overlay(source,mask,[244,125,103]), { source:s.source,maskRegions:s.maskRegions });
     }
     if (s.id === "image-deformation") {
-      const handles = [
-        [0.18, 0.18],
-        [0.82, 0.18],
-        [0.18, 0.82],
-        [0.82, 0.82],
-        [0.5, 0.5],
-      ].map(([x, y]) => ({
-        from: [x * source.width, y * source.height],
-        to: [x * source.width, y * source.height],
-      }));
-      handles[4].to[0] += 0.12 * source.width;
-      handles[4].to[1] -= 0.07 * source.height;
+      const handles = sampleHandles(source,s.pins);
+      handles[s.examplePin.index].to = s.examplePin.to.map((v,i)=>v*([source.width,source.height][i]-1));
       result = deform({ ...params, source, handles });
+      resultParams = { ...resultParams,source:s.source,handles };
     }
     if (s.id === "tree-growth") {
-      result = final(growTree(params));
+      resultParams = {
+        seed: 42,
+        count: params.count,
+        canopy: "round",
+        width: 1.55,
+        height: 2,
+        trunkHeight: 0.52,
+        segmentLength: 0.055,
+        influenceRadius: 0.28,
+        killRadius: 0.095,
+        iterations: 180,
+        tropism: 0.045,
+        leaves: true,
+        obstacles: [],
+      };
+      result = final(growTree(resultParams));
+      const obstructedParams = {
+        ...resultParams,
+        obstacles: [{ x: 0.35, y: 1.2, z: 0, r: 0.3 }],
+      };
       encode(
         `${s.id}-alternate`,
-        final(growTree({ ...params, canopy: "spreading", seed: 17 })),
-        { ...params, canopy: "spreading", seed: 17 },
+        final(growTree(obstructedParams)),
+        obstructedParams,
       );
     }
     if (s.id === "stable-fluids") {
-      result = final(
-        fluidDemo({
-          ...params,
-          grid: 80,
-          dyeResolution: 256,
-          steps: 110,
-          seed: 42,
-        }),
-      );
+      resultParams = {
+        grid: 80,
+        dyeResolution: 256,
+        steps: 110,
+        seed: 42,
+        viscosity: 0.0001,
+        diffusion: 0,
+        decay: 0.18,
+        damping: 0.07,
+        iterations: 60,
+      };
+      result = final(fluidDemo(resultParams));
+      const viscousParams = { ...resultParams, viscosity: 0.003 };
       encode(
         `${s.id}-alternate`,
-        final(
-          fluidDemo({
-            ...params,
-            grid: 80,
-            dyeResolution: 256,
-            steps: 180,
-            seed: 17,
-          }),
-        ),
-        { grid: 80, steps: 180, seed: 17 },
+        final(fluidDemo(viscousParams)),
+        viscousParams,
       );
     }
     if (s.id === "hybrid-images")
       result = hybrid({
         ...params,
         source,
-        other: await read("owl", s.size),
+        other: await read(s.other, s.size),
         alignment: {
           x: params.alignX,
           y: params.alignY,
@@ -168,28 +173,19 @@ const records = await page.evaluate(async () => {
       result = final(toneMap({ ...params, source: hdr }));
     }
     if (s.id === "image-analogies") {
-      const c = document.createElement("canvas");
-      c.width = source.width;
-      c.height = source.height;
-      const big = document.createElement("canvas");
-      drawImage(big, painted);
-      const ctx = c.getContext("2d");
-      ctx.drawImage(big, 0, 0, c.width, c.height);
-      const filtered = {
-        width: c.width,
-        height: c.height,
-        data: ctx.getImageData(0, 0, c.width, c.height).data,
-      };
-      result = final(
-        analogize({
-          ...params,
-          source,
-          filtered,
-          target: await read("landscape", s.size),
-        }),
-      );
+      const filtered = engraveExample({ source });
+      encode(s.filtered,filtered,{source:s.source,preparation:"registered Sobel contours and tone-controlled hatching"});
+      result = final(analogize({ ...params, source, filtered, target:await read(s.other,s.size) }));
+      resultParams = { ...resultParams,source:s.source,filtered:s.filtered,target:s.other };
     }
-    encode(`${s.id}-result`, result, { ...params, size: s.size });
+    encode(`${s.id}-result`, result, resultParams);
+  }
+  const { synthesize } = await import("/src/quilting.js");
+  for (const [name, texture, isTransfer] of [["transfer-fabric-result","transfer-fabric",true],["quilting-slate-result","quilting-slate",false]]) {
+    const source = await read(texture,256), target = isTransfer ? await read("bust",256) : undefined;
+    const options = isTransfer ? {size:256,patchSize:36,overlap:6,candidateCount:384,structure:.75,passes:3,seed:"42",method:"cut"} : {size:1024,patchSize:240,overlap:41,candidateCount:384,passes:1,seed:"42",method:"cut"};
+    const result = await synthesize({...options,source,target});
+    encode(name,result,{...options,source:texture,...(isTransfer?{target:"bust"}:{})});
   }
   return output;
 });

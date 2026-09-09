@@ -1,26 +1,34 @@
 # Images and reproducibility
 
-The foliage, river-pebble texture and anonymous sculpture photographs were generated specifically as input material on September 8, 2026. The sculpture does not depict a real person. These images are not photographs of completed algorithm output.
+Each study owns a distinct source set. Source photographs were generated as input material; published outputs are computed by the actual algorithms used in the live workers. No output is an AI illustration of what the algorithm is supposed to produce.
 
-- `foliage.webp`: flat macro of densely overlapping small leaves; varied forest/sage tones, visible veins and gaps; even diffuse lighting.
-- `pebbles.webp`: flat macro of tightly packed smooth river stones, from charcoal to ivory; varied gray tones and fine surface detail; no perspective or selective focus.
-- `bust.webp`: anonymous classical ivory sculpture, curly hair, head and shoulders centered, dark background, soft upper-left light.
+| Study | Exclusive input set | What the comparison demonstrates |
+| --- | --- | --- |
+| Image quilting | `foliage.webp`, `quilting-slate.webp` | A 256px material sample expanded to 1024px with near-full patches; straight versus minimum-error seams. |
+| Texture transfer | `pebbles.webp`, `transfer-fabric.webp`, `bust.webp` | An anonymous sculpture reconstructed from light/dark material patches. The sculpture does not depict a real person. |
+| Weighted stippling | `stippling-shell.webp` | Spiral shell ridges resolved with 8,000 individual ink circles by default. SVG retains their geometry. |
+| Painterly rendering | `harbor.webp` | Harbor forms reconstructed by ordered, curved strokes at multiple scales. |
+| Seam carving | `seam-balloons.webp` | Balloons retain their shape while empty sky is removed; ordinary resizing at the same output width provides a baseline. |
+| PatchMatch | `patchmatch-gravel.webp` | A red bottle and its contact shadow are masked, then filled from surrounding gravel patches without resizing. |
+| Moving least squares | `deformation-leaf.webp` | Pins on the fan and stem deform a ginkgo leaf through local transformations. |
+| Space colonization | Procedural attraction volume | Same seed/canopy, with and without an obstacle. The obstacle also excludes attraction points, so their exact positions can differ. |
+| Stable Fluids | Procedural dye injections | Same emitters, seed 42, and 110 steps; only viscosity changes from 0.0001 to 0.003. |
+| Hybrid images | `fox.webp`, `owl.webp` | Fox supplies low spatial frequencies, owl supplies high frequencies. |
+| HDR tone mapping | `lebombo.hdr` | Plain exposure and bilateral tone mapping of the same floating-point radiance. |
+| Image Analogies | `analogies-courtyard.webp`, `analogies-engraved.png`, `analogies-arcade.webp` | Registered A/A′ pair and a different B teach a photo-to-engraving relationship. B′ is synthesized by analogy. |
 
-Inputs are 512px WebP. The demo samples the texture to 256px and target to the output dimensions. `quilting-result.webp`, `quilting-straight.webp`, `transfer-result.webp` and `transfer-foliage.webp` were computed with this repository’s `synthesize()` implementation, then encoded as WebP for display. They are not AI-generated result mockups. Exact settings are recorded in `web/assets/examples.json`. Compression affects the published previews; downloadable PNGs retain the generated pixel values.
+The original foliage, pebbles, and bust were generated September 8, 2026 and saved at 512px. Harbor, fox and owl are 768px inputs from the same date. Eight dedicated replacement/additional sources were generated September 9, 2026 using the built-in image-generation tool, then resized to a 768px maximum edge and encoded as WebP. Their complete prompts are in [source-prompts-2026-09-09.json](source-prompts-2026-09-09.json). The old shared landscape, painted harbor exemplar, and foliage-transfer output have been retired from the source and gallery sets.
 
-The quilting previews are 1024 × 1024 exports from a 256 × 256 working texture, using 240px patches, 41px overlaps, 384 candidate limit and seed 42. Transfer previews retain their separate 256px output, 36px initial patch and three-pass settings.
+## Algorithm outputs
 
-## Expanded experiments
+Run `npm run examples` while the standalone server is active. `scripts/generate-examples.mjs` imports the same modules as the live workers, computes each result, saves PNG and WebP files, and records effective parameters in `web/assets/experiment-examples.json`. The unchanged original foliage and pebble examples retain their settings in `web/assets/examples.json`.
 
-Four additional input photographs were generated for this collection on September 8, 2026 and resized to a768px maximum edge:
+`src/experiments/catalog.js` stores normalized mask regions and subject-specific pins; `sample-inputs.js` converts them to pixel coordinates for both the lab and exports. Uploaded photographs start with an empty mask and generic pins, so default-subject annotations are never applied to an unrelated upload. The completion rectangle includes the entire bottle and its short shadow. The carving rectangles protect both balloons and baskets. The leaf example moves a pin on the right lobe while retaining the other anchors.
 
-- `landscape.webp`: coastal meadow, wind-shaped pine at the left, sea cliffs, red wildflowers, small orange cone in the lower-right grass. The cone provides a clearly visible PatchMatch removal target; the pine provides a seam-carving subject.
-- `harbor.webp`: Mediterranean harbor, terracotta houses and cypresses at the left, blue wooden boat in the foreground, clear sea and warm daylight. A separate scene is needed to test whether Image Analogies responds to a new target.
-- `fox.webp`: front-facing fox, detailed orange fur and white cheeks on a pale neutral background.
-- `owl.webp`: front-facing barn owl, pale heart-shaped face and fine feather detail on a matching neutral background. Alignment remains an explicit hybrid-image control; the generated faces are not assumed to be registered automatically.
+`engraveExample()` creates only A′ using registered Sobel contours and tone-controlled hatching. The live input is a lossless PNG at the same dimensions as A's working image. The engraving filter is never applied to B to fabricate B′: `analogize()` synthesizes it by matching the A/A′ relationship. The WebP A′ is only a gallery preview. The default example uses 256px, three pyramid levels, coherence 0.1, and 128 search candidates. Synthesis artifacts remain possible and are described in the interface.
 
-These are source material, not algorithm-output illustrations. `harbor-painted` is computed by the curved-stroke renderer and provides the registered A′ input for Image Analogies.
+All published PNGs preserve the computed pixels. WebP previews use lossy compression; browser rasterization/encoding can introduce small differences between platforms. The mask overlays and uniform-resize baseline are explanatory diagnostic images, clearly labeled, not algorithm results.
 
-`lebombo.hdr` is **Lebombo by Greg Zaal**, from [Poly Haven](https://polyhaven.com/a/lebombo), [CC0](https://polyhaven.com/license). Source file: [1K RGBE](https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/lebombo_1k.hdr). This is real floating-point radiance from a high-dynamic-range photograph. `hdr-exposure` is a direct sRGB exposure preview; `hdr-tone-mapping-result` is the output of this repository’s bilateral base/detail algorithm. It is not an LDR image relabeled as HDR.
+## HDR attribution
 
-Run `npm run examples` while the standalone server is active. The script invokes each actual algorithm, saves both PNG and WebP outputs, and records parameters in `web/assets/experiment-examples.json`. It also makes alternative seeded tree and fluid outputs. These are identical modules to the portfolio’s live workers. The deformation example shifts the center pin12% right and7% up. The completion mask covers the cone at roughly76% of image width and65% of height. Inputs, seeds, controls and code determine the examples; browser rasterization/encoding may introduce small differences between platforms.
+`lebombo.hdr` is **Lebombo by Greg Zaal**, from [Poly Haven](https://polyhaven.com/a/lebombo), [CC0](https://polyhaven.com/license). Source: [1K RGBE](https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/lebombo_1k.hdr). This is real floating-point radiance. `hdr-exposure` is a direct sRGB exposure preview; `hdr-tone-mapping-result` is the bilateral base/detail result, not an LDR image relabeled as HDR.

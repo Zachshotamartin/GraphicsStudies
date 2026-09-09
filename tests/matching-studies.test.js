@@ -110,3 +110,39 @@ test('forward MLS raster is byte-exact for identity and integer translation, wit
     else assert.deepEqual(pixel, source.data.subarray(((y - 2) * 24 + x - 3) * 4, ((y - 2) * 24 + x - 3) * 4 + 4));
   }
 });
+
+test('fixed MLS perimeter keeps opaque coverage and edge pixels while interior pins still move exactly', () => {
+  const source = image(64, 48, (x, y) => [x * 3, y * 4, x + y]);
+  const handles = [
+    { from: [9, 8], to: [9, 8] }, { from: [53, 8], to: [53, 8] },
+    { from: [9, 38], to: [9, 38] }, { from: [53, 38], to: [53, 38] },
+    { from: [30, 23], to: [37, 18] },
+  ];
+  const before = source.data.slice();
+  for (const mode of ['rigid', 'similarity', 'affine']) {
+    const output = deform({ source, handles, mode, boundary: 'fixed' });
+    assert.equal(output.boundary, 'fixed');
+    for (let y = 0; y < source.height; y++) for (let x = 0; x < source.width; x++) {
+      const i = (y * source.width + x) * 4;
+      assert.equal(output.data[i + 3], 255, `${mode} produced an uncovered pixel at ${x},${y}`);
+      if (x === 0 || y === 0 || x === source.width - 1 || y === source.height - 1) assert.deepEqual(output.data.subarray(i, i + 4), source.data.subarray(i, i + 4));
+    }
+    const origin = (23 * source.width + 30) * 4, destination = (18 * source.width + 37) * 4;
+    assert.deepEqual(output.data.subarray(destination, destination + 4), source.data.subarray(origin, origin + 4), `${mode} lost exact interior pin interpolation`);
+    assert.notDeepEqual(output.data, source.data, 'Fixed perimeter must not disable the deformation.');
+  }
+  assert.deepEqual(source.data, before);
+});
+test('fixed MLS border rejects contradictory moved edge pins while free mode retains transparent uncovered areas', () => {
+  const source = image(24, 24, (x, y) => [x * 10, y * 10, 80]);
+  const boundaryPin = [{ from: [0, 12], to: [3, 12] }];
+  assert.throws(() => deform({ source, handles: boundaryPin, boundary: 'fixed' }), /fixed image border cannot move/);
+  assert.throws(() => deform({ source, boundary: 'clamped' }), RangeError);
+  const stationary = [{ from: [0, 12], to: [0, 12] }];
+  assert.deepEqual(deform({ source, handles: stationary, boundary: 'fixed' }).data, source.data);
+  const moved = [{ from: [10, 10], to: [13, 12] }];
+  const free = deform({ source, handles: moved, boundary: 'free' });
+  assert.equal(free.boundary, 'free');
+  assert.deepEqual(deform({ source, handles: moved }).data, free.data, 'The API default must remain free.');
+  assert.ok(free.data.some((value, index) => index % 4 === 3 && value === 0), 'Free translation should expose transparent pixels.');
+});

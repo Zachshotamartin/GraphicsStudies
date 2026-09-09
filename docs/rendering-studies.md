@@ -6,17 +6,24 @@ These modules are deterministic, dependency-free ES modules. They run in Node or
 
 **Research:** Adrian Secord, [Weighted Voronoi Stippling](https://lhf.impa.br/cursos/rr/p37-secord.pdf), NPAR 2002, [DOI](https://doi.org/10.1145/508530.508537).
 
-`stipple({source, count:1800, iterations:16, seed:42, paper:[245,243,231], ink:[27,44,40]})`
+`stipple({source, count:8000, iterations:16, seed:42, paper:[245,243,231], ink:[27,44,40]})`
 
 - Seed sites from the source's luminance-derived darkness distribution using a cumulative density table and a reproducible pseudorandom generator.
 - Build an exact nearest-neighbor k-d tree for the sites on every iteration.
-- Assign raster samples to their nearest site and integrate their darkness-weighted positions.
+- Assign raster samples to their nearest site and integrate their positions with weight `rho = darkness²`. This implementation chooses the squared density to compensate for planar CVTs' approximate square-root relationship between centroid weight and site density. Initialization remains proportional to linear darkness.
 - Move every nonempty site to its weighted centroid (Lloyd relaxation). Empty sampled cells retain their sites, avoiding random jumps during relaxation.
-- Render antialiased circular ink marks on paper. Output `points:[{x,y,r}]` supports a genuine SVG drawing.
+- Integrate **linear** darkness separately within each sampled cell to determine its ink area. Set the radius from that area, independently of the squared centroid weight. The darkest cells receive a bounded circle-packing correction so they can close the gaps between overlapping disks rather than stopping at mid-gray.
+- Render antialiased circular ink marks on paper. Their raster footprints are normalized to the disk area, so subpixel dots do not accumulate an artificially dark fringe. Output `points:[{x,y,r}]` supports a genuine SVG drawing with one consistent ink color and locally adjusted radii. All contrast comes from these circles; there is no image layer or contrast filter behind them.
 
-The quadrature grid scales with point count and is bounded to 192 samples on its longest side. This approximates the continuous weighted integral; it does not compute explicit Voronoi polygon boundaries. `energy` reports mean weighted squared distance before each iteration's centroid update. Its decrease is tested. Dot coverage is intentionally less than full tonal reconstruction to retain negative space between ink marks. All-white/transparent images return blank paper, not arbitrary dots.
+The quadrature grid targets twelve samples per site, preserves the source aspect ratio, and is bounded by the full source raster (up to 512 × 512). A square 512px source uses 310 × 310 samples for 8000 sites and 490 × 490 for 20000 sites. Thin or small images use their full raster when twelve samples per site are unavailable. This approximates the continuous weighted integral; it does not compute explicit Voronoi polygon boundaries. `energy` reports the squared-distance integral weighted by `darkness²`, normalized by total linear darkness, before each iteration's centroid update. Its decrease is tested. All-white/transparent images return blank paper, not arbitrary dots.
 
-Controls: 8–5000 requested dots (UI recommends at least200), 1–30 iterations, seed. Site count is capped to the integration sample count for tiny inputs. Progress is emitted once per iteration. The result includes the final sites, colors, actual iteration count and integration-grid dimensions.
+Controls: 8–20000 requested dots, with 8000 as the default, 1–30 iterations, and seed. Site count is capped only to the source pixel count for tiny inputs; a 512 × 512 input retains all 20000 sites. `requestedCount` and `actualCount` make that cap explicit. Progress is emitted once per iteration. The result includes the final sites, colors, actual iteration count and integration-grid dimensions.
+
+For cell `i`, the ink-area target is `sum(darkness) × sampleArea`. The circle-packing factor is one through 75% darkness, then rises smoothly to at most 1.28 at black. This is a documented tonal-rendering adaptation to Secord's centroid-relaxation method, not a claim to reproduce the paper's exact mark-sizing scheme. It preserves light and middle tones while letting dark marks overlap. Because circles, sampled cells, and raster pixels do not tile identically, exact photographic tone is not guaranteed; the implementation tests regional contrast and bounded error instead.
+
+Increasing the count makes smaller, more closely spaced marks without a fixed minimum radius. Raster antialiasing conserves each disk's area before overlap; the pale-input regression compares 500-dot and 8000-dot renderings, both approximately 1.96% ink for a 250/255 source. Additional tests cover a five-step tonal ramp and a dark scene with bright circular lights and a thin illuminated beam. SVG retains subpixel circles even where an 8-bit raster cannot represent their smallest tonal contribution.
+
+On one local Node22 run, a 512 × 512 shell photo at 5000 dots and thirty passes took 1.30 seconds. The same settings on a synthetic night fixture took 1.67 seconds; the dark region retained over 92% ink coverage while bright lights remained approximately 95% paper. The previous global-area scaling produced a gray background instead. These are fixture-specific measurements, not cross-device performance guarantees; the synthetic scene is a regression fixture, not a claim to have processed a visitor's unavailable original photograph.
 
 ## Painterly rendering
 

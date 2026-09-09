@@ -144,8 +144,8 @@ try {
     }
     if (id === 'stippling') {
       const downloadEvent = page.waitForEvent('download'); await page.locator('[data-svg]').click();
-      const exported = await downloadEvent, svg = await fs.readFile(await exported.path(), 'utf8'); assert.match(svg, /<svg/); assert.match(svg, /<circle/);
-      await setRange('[data-param="count"]', 5000); await setRange('[data-param="iterations"]', 30);
+      const exported = await downloadEvent, svg = await fs.readFile(await exported.path(), 'utf8'); assert.match(svg, /<svg/); assert.equal((svg.match(/<circle/g)||[]).length,8000);
+      await setRange('[data-param="count"]', 20000); await setRange('[data-param="iterations"]', 30);
       await page.locator('[data-run]').click(); await page.locator('[data-cancel]').click();
       assert.match(await status().textContent(), /^Stopped/); assert.equal(await page.locator('[data-run]').isEnabled(), true);
       await page.locator('[data-reset]').click();

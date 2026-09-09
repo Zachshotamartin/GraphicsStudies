@@ -150,6 +150,22 @@ test('high-resolution dye follows the coarse velocity field without changing nor
   assert.throws(() => new StableFluid(32, { dyeResolution: 16 }), /Dye resolution/);
 });
 
+test('higher viscosity dissipates more motion under the same initial impulse and simulation time', () => {
+  const low = new StableFluid(32, { viscosity: 0.0001, diffusion: 0, decay: 0, damping: 0 });
+  const high = new StableFluid(32, { viscosity: 0.003, diffusion: 0, decay: 0, damping: 0 });
+  for (const fluid of [low, high]) {
+    fluid.addForce(0.5, 0.5, 1.2, -0.6, 0.2);
+    fluid.addDye(0.5, 0.5, [100, 220, 140], 1, 0.05);
+    for (let frame = 0; frame < 24; frame++) fluid.step(1 / 60);
+  }
+  const slow = high.diagnostics(), quick = low.diagnostics();
+  assert.equal(slow.elapsed, quick.elapsed);
+  assert.ok(slow.finite && quick.finite);
+  assert.ok(slow.kineticEnergy < quick.kineticEnergy * 0.85);
+  assert.ok(slow.divergence.rms < 0.001 && quick.divergence.rms < 0.001);
+  assert.notDeepEqual(high.image().data, low.image().data);
+});
+
 test('Gaussian filtering preserves constants and spreads an impulse symmetrically', () => {
   const constant = new Float32Array(9 * 9 * 3).fill(80);
   for (const value of gaussianRGB(constant, 9, 9, 2)) assert.ok(Math.abs(value - 80) < 0.0001);
