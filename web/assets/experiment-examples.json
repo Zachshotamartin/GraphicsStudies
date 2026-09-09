@@ -1,0 +1,160 @@
+{
+  "generatedBy": "scripts/generate-examples.mjs",
+  "examples": [
+    {
+      "name": "harbor-painted",
+      "width": 384,
+      "height": 256,
+      "params": {
+        "brushSize": 12,
+        "detail": 0.65,
+        "seed": 42
+      }
+    },
+    {
+      "name": "stippling-result",
+      "width": 384,
+      "height": 384,
+      "params": {
+        "count": 1800,
+        "iterations": 16,
+        "seed": 42,
+        "size": 384
+      }
+    },
+    {
+      "name": "painterly-rendering-result",
+      "width": 384,
+      "height": 256,
+      "params": {
+        "brushSize": 12,
+        "detail": 0.65,
+        "seed": 42,
+        "size": 384
+      }
+    },
+    {
+      "name": "seam-carving-result",
+      "width": 269,
+      "height": 256,
+      "params": {
+        "widthRatio": 0.7,
+        "brush": 14,
+        "maskMode": "protect",
+        "size": 384
+      }
+    },
+    {
+      "name": "patchmatch-result",
+      "width": 256,
+      "height": 171,
+      "params": {
+        "iterations": 6,
+        "patchSize": 7,
+        "brush": 10,
+        "seed": 42,
+        "size": 256
+      }
+    },
+    {
+      "name": "image-deformation-result",
+      "width": 320,
+      "height": 320,
+      "params": {
+        "mode": "rigid",
+        "alpha": 1,
+        "size": 320
+      }
+    },
+    {
+      "name": "tree-growth-alternate",
+      "width": 720,
+      "height": 620,
+      "params": {
+        "canopy": "spreading",
+        "count": 1200,
+        "seed": 17,
+        "obstacle": "off"
+      }
+    },
+    {
+      "name": "tree-growth-result",
+      "width": 720,
+      "height": 620,
+      "params": {
+        "canopy": "round",
+        "count": 1200,
+        "seed": 42,
+        "obstacle": "off",
+        "size": 640
+      }
+    },
+    {
+      "name": "stable-fluids-alternate",
+      "width": 256,
+      "height": 256,
+      "params": {
+        "grid": 80,
+        "steps": 180,
+        "seed": 17
+      }
+    },
+    {
+      "name": "stable-fluids-result",
+      "width": 256,
+      "height": 256,
+      "params": {
+        "viscosity": 0.0001,
+        "diffusion": 0,
+        "dye": "mint",
+        "size": 320
+      }
+    },
+    {
+      "name": "hybrid-images-result",
+      "width": 384,
+      "height": 384,
+      "params": {
+        "sigma": 7,
+        "detail": 1,
+        "alignX": 0,
+        "alignY": 0.055,
+        "alignScale": 0.84,
+        "size": 384
+      }
+    },
+    {
+      "name": "hdr-exposure",
+      "width": 384,
+      "height": 192,
+      "params": {
+        "exposure": 0
+      }
+    },
+    {
+      "name": "hdr-tone-mapping-result",
+      "width": 384,
+      "height": 192,
+      "params": {
+        "contrast": 12,
+        "detail": 1,
+        "exposure": 0,
+        "range": 0.4,
+        "spatial": 6,
+        "size": 384
+      }
+    },
+    {
+      "name": "image-analogies-result",
+      "width": 256,
+      "height": 171,
+      "params": {
+        "levels": 3,
+        "coherence": 0.5,
+        "candidates": 64,
+        "seed": 42,
+        "size": 256
+      }
+    }
+  ]
+}
