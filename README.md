@@ -44,6 +44,8 @@ Transfer adds squared error against a smoothed, independently normalized luminan
 
 ## Verification
 
+There are no GitHub Actions workflows in this repository. Run validation locally before opening and merging a pull request.
+
 Node tests compare the seam solver to exhaustive path enumeration; check reproducibility, opaque coverage including cropped boundaries, input immutability and pixel provenance; verify transfer responds to target structure; and cover progress and invalid parameters. Portfolio browser tests exercise the actual worker, cancellation, uploads, seam overlay and PNG export.
 
 See [asset provenance](docs/assets.md) for generated input photographs and reproducible example settings. MIT license applies to the implementation. Credit for the original method belongs to Alexei A. Efros and William T. Freeman.
