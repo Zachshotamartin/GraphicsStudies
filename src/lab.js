@@ -72,6 +72,7 @@ export function mountLab(host,{mode='quilting',assetsBase='./web/assets',workerF
     worker?.terminate();setError('');lock(true);view='result';
     for(const button of host.querySelectorAll('[data-view]'))button.setAttribute('aria-pressed',String(button.dataset.view==='result'));
     status.textContent='Preparing image pixels…';
+    if(matchMedia('(max-width:700px)').matches) host.querySelector('.graphics-lab__result').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth',block:'start'});
     try {
       const size=Number(form.elements.size.value),patchSize=Number(form.elements.patch.value);
       const source=await decode(sourceImage.src,256,true);
