@@ -47,6 +47,89 @@ test('stippling is deterministic, respects blank/transparent inputs, and never m
   for (let i = 3; i < clear.data.length; i += 4) clear.data[i] = 0;
   assert.equal(finish(stipple({ source: clear })).result.points.length, 0);
 });
+test('dense stippling retains every requested site with an appropriately resolved integration grid', () => {
+  const source = image(512, 512, (x, y) => [x % 256, y % 256, (x + y) % 256]);
+  const defaults = finish(stipple({ source, iterations: 2 })).result;
+  assert.equal(defaults.points.length, 8000);
+  assert.equal(defaults.requestedCount, 8000);
+  assert.equal(defaults.actualCount, 8000);
+  assert.ok(defaults.sampleWidth * defaults.sampleHeight >= 8000 * 12);
+  const options = { source, count: 20000, iterations: 3, seed: 91 };
+  const { result, frames } = finish(stipple(options));
+  monotonic(frames);
+  assert.equal(result.points.length, 20000);
+  assert.equal(result.actualCount, result.requestedCount);
+  assert.ok(result.sampleWidth * result.sampleHeight >= 20000 * 12);
+  assert.ok(result.sampleWidth <= 512 && result.sampleHeight <= 512);
+  assert.ok(result.points.every(p => Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.r) && p.r > 0 && p.x >= 0 && p.x < 512 && p.y >= 0 && p.y < 512));
+  assert.ok(new Set(result.points.map(p => p.r)).size > 10, 'Cell-integrated ink areas must adapt to the local image, not impose a global dot radius.');
+  assert.deepEqual(result.ink, [27, 44, 40], 'Local tone uses ink area, not gray-colored dots.');
+  const repeat = finish(stipple(options)).result;
+  assert.deepEqual(result.points, repeat.points);
+  assert.deepEqual(result.data, repeat.data);
+});
+test('integration preserves aspect ratio and caps tiny inputs explicitly without a radius floor', () => {
+  const source = image(256, 64, () => [245, 245, 245]);
+  const result = finish(stipple({ source, count: 8000, iterations: 2 })).result;
+  assert.equal(result.points.length, 8000);
+  assert.equal(result.sampleWidth, 256);
+  assert.equal(result.sampleHeight, 64);
+  const tiny = finish(stipple({ source: image(16, 16, () => [245, 245, 245]), count: 20000, iterations: 2 })).result;
+  assert.equal(tiny.requestedCount, 20000);
+  assert.equal(tiny.actualCount, 256);
+  assert.equal(tiny.points.length, 256);
+  assert.ok(tiny.points.every(p => p.r < 0.25), 'Very light, small inputs need subpixel dots, not a fixed minimum footprint.');
+});
+test('more dots improve spatial detail without making a light input artificially darker', () => {
+  const source = image(192, 192, () => [250, 250, 250]);
+  const settings = { source, iterations: 5, paper: [255, 255, 255], ink: [0, 0, 0] };
+  const sparse = finish(stipple({ ...settings, count: 500 })).result;
+  const dense = finish(stipple({ ...settings, count: 8000 })).result;
+  const coverage = result => result.data.reduce((total, value, i) => i % 4 === 0 ? total + (255 - value) / 255 : total, 0) / (result.width * result.height);
+  const expected = 1 - 250 / 255;
+  assert.ok(Math.abs(coverage(sparse) - expected) < expected * 0.2);
+  assert.ok(Math.abs(coverage(dense) - expected) < expected * 0.2);
+  assert.ok(Math.abs(coverage(dense) - coverage(sparse)) < expected * 0.15);
+  assert.ok(dense.energy < sparse.energy / 8, 'A denser set must sample the image substantially more precisely.');
+  const averageArea = result => result.points.reduce((sum, point) => sum + Math.PI * point.r ** 2, 0) / result.points.length;
+  assert.ok(averageArea(dense) < averageArea(sparse) / 14);
+});
+test('dark scenes retain black backgrounds, bright lights, thin structures and stable tone across dot counts', () => {
+  const source = image(256, 256, (x, y) => {
+    const lamp = Math.hypot(x - 76, y - 76) < 22;
+    const frame = x > 45 && x < 214 && Math.abs(y - 178) < 3;
+    const v = lamp || frame ? 245 : 12;
+    return [v, v, v];
+  });
+  const region = (result, left, top, right, bottom) => {
+    let sum = 0;
+    for (let y = top; y < bottom; y++) for (let x = left; x < right; x++) sum += result.data[(y * result.width + x) * 4] / 255;
+    return sum / ((right - left) * (bottom - top));
+  };
+  const outputs = [2000, 8000].map(count => finish(stipple({ source, count, iterations: 12, paper: [255, 255, 255], ink: [0, 0, 0] })).result);
+  for (const output of outputs) {
+    const sky = region(output, 20, 15, 236, 40), light = region(output, 65, 65, 87, 87), line = region(output, 80, 177, 180, 180);
+    assert.ok(sky < 0.16, `A near-black sky must remain dark, not a gray dot field (${sky}).`);
+    assert.ok(light > 0.8 && light - sky > 0.7, `Bright interiors must stay bright and distinct (${light}, ${sky}).`);
+    assert.ok(line > 0.7 && line - sky > 0.6, `Thin illuminated structures must remain legible (${line}, ${sky}).`);
+    assert.ok(output.points.every(point => Number.isFinite(point.r) && point.r > 0));
+  }
+  assert.ok(Math.abs(region(outputs[0], 20, 15, 236, 40) - region(outputs[1], 20, 15, 236, 40)) < 0.06, 'Density must improve detail without materially shifting the background tone.');
+});
+test('the stippled tonal ramp follows local darkness instead of compressing every tone toward gray', () => {
+  const levels = [12, 64, 128, 192, 245];
+  const source = image(250, 100, x => { const value = levels[Math.floor(x / 50)]; return [value, value, value]; });
+  const result = finish(stipple({ source, count: 3000, iterations: 12, paper: [255, 255, 255], ink: [0, 0, 0] })).result;
+  const means = levels.map((_, band) => {
+    let sum = 0;
+    for (let y = 10; y < 90; y++) for (let x = band * 50 + 10; x < band * 50 + 40; x++) sum += result.data[(y * 250 + x) * 4] / 255;
+    return sum / (80 * 30);
+  });
+  means.forEach((mean, i) => {
+    assert.ok(Math.abs(mean - levels[i] / 255) < 0.1, `Band ${i} should preserve its local tone (${mean}).`);
+    if (i) assert.ok(mean - means[i - 1] > 0.1, 'Adjacent tones must remain meaningfully separated.');
+  });
+});
 test('painterly rendering makes curved, multiscale strokes with a reproducible replay record', () => {
   const source = image(96, 96, (x, y) => { const r = Math.hypot(x - 48, y - 48); return [Math.min(255, r * 5), Math.min(255, r * 3), 90]; });
   const original = source.data.slice(), options = { source, brushSize: 10, detail: 0.75, seed: 4 };
@@ -139,7 +222,7 @@ test('horizontal and two-axis carving transpose images/masks correctly and suppo
 });
 test('unsafe inputs fail before long work starts', () => {
   const source = image(32, 32, () => [0, 0, 0]);
-  for (const change of [{ count: 5001 }, { iterations: 31 }, { paper: [-1, 2, 3] }, { source: { ...source, data: [] } }]) assert.throws(() => finish(stipple({ source, ...change })), RangeError);
+  for (const change of [{ count: 20001 }, { iterations: 31 }, { paper: [-1, 2, 3] }, { source: { ...source, data: [] } }]) assert.throws(() => finish(stipple({ source, ...change })), RangeError);
   for (const change of [{ brushSize: 0 }, { detail: NaN }, { source: { width: 513, height: 32, data: [] } }]) assert.throws(() => finish(paint({ source, ...change })), RangeError);
   for (const change of [{ targetWidth: 12 }, { targetWidth: 33 }, { targetHeight: NaN }, { removeMask: new Uint8Array(3) }]) assert.throws(() => finish(carve({ source, ...change })), RangeError);
   assert.throws(() => minimumVerticalSeam([NaN], 1, 1), RangeError);

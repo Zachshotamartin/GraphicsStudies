@@ -84,15 +84,24 @@ function sample(image, x, y, output, index) {
 /**
  * Deform a textured triangular grid using forward MLS, then bilinearly sample its texture.
  * Unlike a swapped-handle inverse approximation this mesh uses the actual forward map.
- * Uncovered pixels are transparent. Folded triangles draw in grid order; extreme folds are
+ * With a free border, uncovered pixels are transparent. A fixed border constrains the
+ * perimeter mesh vertices in place; interior vertices still follow MLS.
+ * Folded triangles draw in grid order; extreme folds are
  * deliberately not claimed to be injective or physically collision-free.
  */
-export function deform({ source, handles = [], mode = 'rigid', alpha = 1, gridStep = 3 } = {}) {
+export function deform({ source, handles = [], mode = 'rigid', alpha = 1, gridStep = 3, boundary = 'free' } = {}) {
   if (!source || !Number.isInteger(source.width) || !Number.isInteger(source.height) || source.width < 2 || source.height < 2 || source.width > 512 || source.height > 512 || !(source.data instanceof Uint8ClampedArray) || source.data.length !== source.width * source.height * 4) throw new RangeError('Use a 2–512px RGBA image.');
   if (!Number.isInteger(gridStep) || gridStep < 1 || gridStep > 16) throw new RangeError('Grid step must be 1–16 pixels.');
+  if (!['free', 'fixed'].includes(boundary)) throw new RangeError('Image boundary must be free or fixed.');
   const { mapper, points } = prepare(handles, { mode, alpha });
   const { width, height } = source;
-  if (points.every(p => p.from[0] === p.to[0] && p.from[1] === p.to[1])) return { width, height, data: source.data.slice(), mode, progress: 1, vertices: 0, triangles: 0 };
+  const onBorder = (x, y) => x >= 0 && x <= width - 1 && y >= 0 && y <= height - 1 && (Math.abs(x) < EPSILON || Math.abs(y) < EPSILON || Math.abs(x - width + 1) < EPSILON || Math.abs(y - height + 1) < EPSILON);
+  if (boundary === 'fixed') {
+    for (const point of points) {
+      if (onBorder(...point.from) && Math.hypot(point.to[0] - point.from[0], point.to[1] - point.from[1]) > EPSILON) throw new RangeError('A pin on the fixed image border cannot move. Select a pin inside the image or change Image border to free.');
+    }
+  }
+  if (points.every(p => p.from[0] === p.to[0] && p.from[1] === p.to[1])) return { width, height, data: source.data.slice(), mode, boundary, progress: 1, vertices: 0, triangles: 0 };
   const axis = (length, dimension) => {
     const values = new Set([0, length - 1]);
     for (let n = gridStep; n < length - 1; n += gridStep) values.add(n);
@@ -100,7 +109,9 @@ export function deform({ source, handles = [], mode = 'rigid', alpha = 1, gridSt
     return [...values].sort((a, b) => a - b);
   };
   const xs = axis(width, 0), ys = axis(height, 1);
-  const vertices = ys.flatMap(y => xs.map(x => ({ x, y, destination: mapper(x, y) })));
+  // Pin the mesh perimeter itself rather than painting over uncovered corners.
+  // Interior vertices (including every interior control pin) retain the actual MLS map.
+  const vertices = ys.flatMap(y => xs.map(x => ({ x, y, destination: boundary === 'fixed' && onBorder(x, y) ? [x, y] : mapper(x, y) })));
   const data = new Uint8ClampedArray(width * height * 4);
   const triangle = (a, b, c) => {
     const [ax, ay] = a.destination, [bx, by] = b.destination, [cx, cy] = c.destination;
@@ -119,5 +130,5 @@ export function deform({ source, handles = [], mode = 'rigid', alpha = 1, gridSt
     triangle(vertices[i], vertices[i + 1], vertices[i + xs.length]);
     triangle(vertices[i + 1], vertices[i + xs.length + 1], vertices[i + xs.length]);
   }
-  return { width, height, data, mode, progress: 1, vertices: vertices.length, triangles: (xs.length - 1) * (ys.length - 1) * 2 };
+  return { width, height, data, mode, boundary, progress: 1, vertices: vertices.length, triangles: (xs.length - 1) * (ys.length - 1) * 2 };
 }

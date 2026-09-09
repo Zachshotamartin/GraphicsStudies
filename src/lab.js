@@ -4,7 +4,7 @@ export function labMarkup({mode='quilting',assetsBase='./web/assets'}={}) {
   return `
     <form class="graphics-lab__controls">
       <fieldset><legend>Source material</legend>
-        <label>Texture<select name="texture"><option value="foliage">Foliage</option><option value="pebbles" ${transfer?'selected':''}>River pebbles</option><option value="upload" hidden>Uploaded texture</option></select></label>
+        <label>Texture<select name="texture">${transfer?'<option value="pebbles">River pebbles</option><option value="transfer-fabric">Woven fabric</option>':'<option value="foliage">Foliage</option><option value="quilting-slate">Slate chips</option>'}<option value="upload" hidden>Uploaded texture</option></select></label>
         <div class="graphics-lab__inputs"><figure><img data-input="source" src="${assetsBase}/${transfer?'pebbles':'foliage'}.webp" alt="Selected source texture" width="128" height="128"><figcaption>Texture sample</figcaption></figure>${transfer?`<figure><img data-input="target" src="${assetsBase}/bust.webp" alt="Selected target image" width="128" height="128"><figcaption>Target structure</figcaption></figure>`:''}</div>
         <label class="graphics-lab__upload">Upload texture<input name="sourceFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
         ${transfer?'<label class="graphics-lab__upload">Upload target<input name="targetFile" type="file" accept="image/png,image/jpeg,image/webp"></label>':''}

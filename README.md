@@ -22,7 +22,7 @@ Twelve small graphics experiments, built from research papers and running locall
 ![Curved-stroke painting computed from a harbor photograph](web/assets/painterly-rendering-result.webp)
 ![Branching structure grown by space colonization](web/assets/tree-growth-result.webp)
 ![Dye transported by the fluid solver](web/assets/stable-fluids-result.webp)
-![Weighted stipple reconstruction of a fox](web/assets/stippling-result.webp)
+![Spiral shell reconstructed with 8,000 ink dots](web/assets/stippling-result.webp)
 
 ## Run locally
 
@@ -78,3 +78,7 @@ Quilting defaults to 240px patches (94% of the source width), 41px overlaps and 
 - Opposite output edges are not constrained to match. These results are not guaranteed to be periodic tiles.
 - This is a classical non-parametric method, not neural style transfer.
 - Timings shown in the UI measure that browser run; they are not cross-device benchmarks.
+
+## Distinct example sets
+
+Every study owns its input images and computed outputs. Stippling starts with 8,000 dots and supports up to 20,000, with a 512px working image and SVG export. The architecture engraving example teaches Image Analogies a treatment from A/A′; it does not reuse the painterly study. [Image provenance and comparisons](docs/assets.md) explain the complete collection.
