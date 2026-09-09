@@ -1,29 +1,64 @@
 # Graphics Studies
 
-Two browser experiments implementing patch-based image synthesis from Efros & Freeman’s **Image Quilting for Texture Synthesis and Transfer** (SIGGRAPH 2001).
+Twelve small graphics experiments, built from research papers and running locally in a browser. Algorithms, worker execution, controls, examples, and tests live together in this repository. The portfolio imports the same implementation, pinned to a commit.
 
-- **Image quilting:** expand a 256 × 256 texture into a 1024 × 1024 surface using near-full 240px patches, then hide joins with minimum-error boundary cuts. Choose patches up to the full 256px source and outputs up to 2048 × 2048.
-- **Texture transfer:** choose texture patches against a target intensity guide, refining the result with smaller patches over several passes.
+## Explore
 
-[Image quilting on the portfolio](https://zachsm.com/studies/image-quilting) · [Texture transfer on the portfolio](https://zachsm.com/studies/texture-transfer) · [Original paper](https://www.merl.com/publications/docs/TR2001-17.pdf)
+| Study | Research | Live playground |
+|---|---|---|
+| Image quilting | [Efros & Freeman, 2001](https://www.merl.com/publications/docs/TR2001-17.pdf) | [Expand a texture](https://zachsm.com/studies/image-quilting) |
+| Texture transfer | [Efros & Freeman, 2001](https://www.merl.com/publications/docs/TR2001-17.pdf) | [Transfer material](https://zachsm.com/studies/texture-transfer) |
+| [Weighted stippling](web/assets/stippling-result.webp) | [Adrian Secord · 2002](https://lhf.impa.br/cursos/rr/p37-secord.pdf) | [Try it](https://zachsm.com/studies/stippling) |
+| [Painterly rendering](web/assets/painterly-rendering-result.webp) | [Aaron Hertzmann · 1998](https://mrl.cs.nyu.edu/publications/painterly98/hertzmann-siggraph98.pdf) | [Try it](https://zachsm.com/studies/painterly-rendering) |
+| [Seam carving](web/assets/seam-carving-result.webp) | [Shai Avidan & Ariel Shamir · 2007](https://cs.brown.edu/courses/cs016/static/files/docs/seamcarving_original_paper.pdf) | [Try it](https://zachsm.com/studies/seam-carving) |
+| [PatchMatch completion](web/assets/patchmatch-result.webp) | [Barnes, Shechtman, Finkelstein & Goldman · 2009](https://gfx.cs.princeton.edu/pubs/Barnes_2009_PAR/) | [Try it](https://zachsm.com/studies/patchmatch) |
+| [Moving least squares](web/assets/image-deformation-result.webp) | [Schaefer, McPhail & Warren · 2006](https://people.engr.tamu.edu/schaefer/research/mls.pdf) | [Try it](https://zachsm.com/studies/image-deformation) |
+| [Space-colonization trees](web/assets/tree-growth-result.webp) | [Runions, Lane & Prusinkiewicz · 2007](https://algorithmicbotany.org/papers/colonization.egwnp2007.html) | [Try it](https://zachsm.com/studies/tree-growth) |
+| [Stable Fluids](web/assets/stable-fluids-result.webp) | [Jos Stam · 1999](https://www.dgp.toronto.edu/public_user/stam/reality/Research/pdf/ns.pdf) | [Try it](https://zachsm.com/studies/stable-fluids) |
+| [Hybrid images](web/assets/hybrid-images-result.webp) | [Oliva, Torralba & Schyns · 2006](https://doi.org/10.1145/1141911.1141919) | [Try it](https://zachsm.com/studies/hybrid-images) |
+| [HDR tone mapping](web/assets/hdr-tone-mapping-result.webp) | [Frédo Durand & Julie Dorsey · 2002](https://people.csail.mit.edu/fredo/PUBLI/Siggraph2002/) | [Try it](https://zachsm.com/studies/hdr-tone-mapping) |
+| [Image Analogies](web/assets/image-analogies-result.webp) | [Hertzmann, Jacobs, Oliver, Curless & Salesin · 2001](https://mrl.cs.nyu.edu/publications/image-analogies/) | [Try it](https://zachsm.com/studies/image-analogies) |
 
-![Synthesized foliage](web/assets/quilting-result.webp)
-![Bust reconstructed with pebbles](web/assets/transfer-result.webp)
+![Curved-stroke painting computed from a harbor photograph](web/assets/painterly-rendering-result.webp)
+![Branching structure grown by space colonization](web/assets/tree-growth-result.webp)
+![Dye transported by the fluid solver](web/assets/stable-fluids-result.webp)
+![Weighted stipple reconstruction of a fox](web/assets/stippling-result.webp)
 
-## Run
+## Run locally
 
-Requires Node 22 or newer. No runtime dependencies, server, account, or API key is required.
+Requires Node 22+. The algorithms have no runtime dependencies, account, server processing, or API key.
 
 ```sh
 npm test
 npm start
 ```
 
-Open http://127.0.0.1:5182. Switch between the two studies in the navigation. Upload a source texture, upload a target for transfer, adjust patch size, overlap, candidate count and seed, then run. Save the completed output as PNG or inspect its patch boundaries. Cancellation terminates the worker immediately; a completed result remains available.
+Open http://127.0.0.1:5182. Every page has controls, a published example, and a live canvas. Uploaded images remain on the device. Expensive work runs in a cancellable Web Worker. The fluid simulation continues until paused, cancelled, or the page unmounts.
 
-The portfolio imports this package’s **same lab UI, worker, and algorithm**, pinned to a commit. There is no second implementation hidden in the site.
+For optional browser verification and example regeneration:
 
-## How it works
+```sh
+npm install
+npx playwright install chromium webkit
+npm run test:browser
+STUDIES_BROWSER=webkit npm run test:browser
+npm run examples
+```
+
+Keep the local server running in another terminal. Browser tests are local-only; **GitHub Actions are disabled and there are no workflows**. The examples script writes lossless PNGs and WebP previews using the algorithms themselves, along with parameters in `web/assets/experiment-examples.json`.
+
+## Implementation notes
+
+- [Rendering: stippling, curved strokes, and seam carving](docs/rendering-studies.md)
+- [Matching: PatchMatch, Image Analogies, and MLS](docs/matching-studies.md)
+- [Simulation: trees, fluids, and hybrid frequencies](docs/simulation-studies.md)
+- [HDR decoding and bilateral tone mapping](docs/hdr.md)
+- [Asset origins and reproducibility](docs/assets.md)
+- [Local validation](docs/validation.md)
+
+These are independent, bounded studies—not complete replicas of every feature or optimization in the cited papers. The pages describe the approximations and failure cases. Neural networks are not used by the algorithms. Four source photographs were generated specifically for the examples; algorithm outputs are computed, not generated mockups.
+
+## Existing quilting and transfer implementation
 
 `src/seam.js` uses dynamic programming to find a minimum-cost connected path through a pixel-error grid. Left and top overlaps use the same solver with a transposed grid. Where both overlaps exist, the retained old-pixel regions are combined by union. This is not a global graph-cut solver.
 
@@ -43,11 +78,3 @@ Quilting defaults to 240px patches (94% of the source width), 41px overlaps and 
 - Opposite output edges are not constrained to match. These results are not guaranteed to be periodic tiles.
 - This is a classical non-parametric method, not neural style transfer.
 - Timings shown in the UI measure that browser run; they are not cross-device benchmarks.
-
-## Verification
-
-There are no GitHub Actions workflows in this repository. Run validation locally before opening and merging a pull request.
-
-Node tests compare the seam solver to exhaustive path enumeration; check reproducibility, opaque coverage including cropped boundaries, input immutability and pixel provenance; verify transfer responds to target structure; and cover progress and invalid parameters. Portfolio browser tests exercise the actual worker, cancellation, uploads, seam overlay and PNG export.
-
-See [asset provenance](docs/assets.md) for generated input photographs and reproducible example settings. MIT license applies to the implementation. Credit for the original method belongs to Alexei A. Efros and William T. Freeman.
