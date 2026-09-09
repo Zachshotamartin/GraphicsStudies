@@ -2,7 +2,7 @@
 
 Two browser experiments implementing patch-based image synthesis from Efros & Freeman’s **Image Quilting for Texture Synthesis and Transfer** (SIGGRAPH 2001).
 
-- **Image quilting:** grow a texture by matching overlapping patches, then hide joins with minimum-error boundary cuts.
+- **Image quilting:** expand a 256 × 256 texture into a 1024 × 1024 surface using near-full 240px patches, then hide joins with minimum-error boundary cuts. Choose patches up to the full 256px source and outputs up to 2048 × 2048.
 - **Texture transfer:** choose texture patches against a target intensity guide, refining the result with smaller patches over several passes.
 
 [Image quilting on the portfolio](https://zachsm.com/studies/image-quilting) · [Texture transfer on the portfolio](https://zachsm.com/studies/texture-transfer) · [Original paper](https://www.merl.com/publications/docs/TR2001-17.pdf)
@@ -31,7 +31,9 @@ The portfolio imports this package’s **same lab UI, worker, and algorithm**, p
 
 Transfer adds squared error against a smoothed, independently normalized luminance guide. The structure control weights target agreement against texture continuity. After the first pass, the texture term also matches the preceding synthesized image; each subsequent pass reduces patch size by one third. Pixel colors are copied from the source, never recolored to match the target.
 
-`src/worker.js` runs synthesis off the UI thread. Progressive frames are transferred at roughly 90 ms intervals. The output is bounded to 512 × 512 and source images are sampled at 256 × 256 in the UI. Uploaded files stay in the browser.
+`src/worker.js` runs synthesis off the UI thread. Progressive frames are transferred at roughly 90 ms intervals, or 300 ms for outputs above 1024px to limit memory traffic. Quilting supports outputs up to 2048 × 2048; transfer remains bounded to 512 × 512. Source images are center-cropped and sampled at 256 × 256 in the UI. Uploaded files stay in the browser.
+
+Quilting defaults to 240px patches (94% of the source width), 41px overlaps and a 1024px output: four times the source width and height, or sixteen times its area. There are 25 overlapping patch placements, with the outer row and column cropped to the output. Overlap scoring skips patch interiors, which do not affect synthesis matching. A full 256px patch has only one source position, so its seed and candidate count do not change the result. Transfer retains 36px patches and a 256px output by default because it needs smaller pieces to follow its target.
 
 ## Scope and limitations
 

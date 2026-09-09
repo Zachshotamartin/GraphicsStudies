@@ -69,5 +69,40 @@ test('progress is monotonic across refinement passes and reaches one',()=>{
   for(let i=3;i<step.value.data.length;i+=4)assert.equal(step.value.data[i],255);
 });
 test('unsafe sizes and malformed inputs fail before work starts',()=>{
-  for(const change of [{size:1024},{overlap:12},{candidateCount:0},{patchSize:0},{passes:6},{structure:NaN},{method:'blend'},{source:{width:16,height:16,data:[]}}])assert.throws(()=>synthesize({...config,...change}),RangeError);
+  for(const change of [{size:2049},{overlap:12},{candidateCount:0},{patchSize:0},{passes:6},{structure:NaN},{method:'blend'},{source:{width:16,height:16,data:[]}}])assert.throws(()=>synthesize({...config,...change}),RangeError);
+});
+test('near-full source patches expand into a four-times-wider texture without holes',()=>{
+  const source=image(256,256,(x,y)=>[x,y,(x+y)%256]);
+  const iterator=quilt({source,size:1024,patchSize:240,overlap:41,candidateCount:384,seed:42});
+  let step=iterator.next(),placements=0,last=0;
+  while(!step.done) {
+    const frame=step.value;
+    assert.ok(frame.placement.sx<=16&&frame.placement.sy<=16);
+    assert.ok(frame.progress>last);last=frame.progress;placements++;
+    step=iterator.next();
+  }
+  assert.equal(last,1);assert.equal(placements,25);
+  assert.equal(step.value.width,source.width*4);
+  for(let i=0;i<step.value.data.length;i+=4) {
+    const [r,g,b,a]=step.value.data.subarray(i,i+4);
+    assert.equal(a,255);assert.equal(b,(r+g)%256);
+  }
+});
+test('whole-source patches support 2048px exports and have no seed variation',()=>{
+  const source=image(256,256,()=>[37,91,54]);
+  const options={source,size:2048,patchSize:256,overlap:44,candidateCount:384};
+  const result=synthesize(options);
+  assert.equal(result.data.length,2048*2048*4);
+  for(let i=0;i<result.data.length;i+=4) {
+    assert.equal(result.data[i],37);assert.equal(result.data[i+1],91);
+    assert.equal(result.data[i+2],54);assert.equal(result.data[i+3],255);
+  }
+  const smaller={...options,source:image(256,256,(x,y)=>[x,y,x^y]),size:512};
+  assert.deepEqual(synthesize({...smaller,seed:1}).data,synthesize({...smaller,seed:2}).data);
+});
+test('large synthesis limits do not relax transfer limits or source bounds',()=>{
+  const source=image(256,256,()=>[20,40,60]);
+  for(const change of [{target:image(513,513,()=>[0,0,0]),size:513,patchSize:36},{target:image(256,256,()=>[0,0,0]),size:256,patchSize:240},{size:1024,patchSize:257}]) {
+    assert.throws(()=>synthesize({...config,source,...change}),RangeError);
+  }
 });
