@@ -1,12 +1,11 @@
-/** The standalone demos and portfolio import this same UI and worker implementation. */
-export function mountLab(host,{mode='quilting',assetsBase='./web/assets',workerFactory=()=>new Worker(new URL('./worker.js',import.meta.url),{type:'module'})}={}) {
+/** Static markup is shared with server-rendered portfolio pages. */
+export function labMarkup({mode='quilting',assetsBase='./web/assets'}={}) {
   const transfer=mode==='transfer';
-  host.classList.add('graphics-lab');
-  host.innerHTML=`
+  return `
     <form class="graphics-lab__controls">
       <fieldset><legend>Source material</legend>
         <label>Texture<select name="texture"><option value="foliage">Foliage</option><option value="pebbles" ${transfer?'selected':''}>River pebbles</option><option value="upload" hidden>Uploaded texture</option></select></label>
-        <div class="graphics-lab__inputs"><figure><img data-input="source" alt="Selected source texture" width="128" height="128"><figcaption>Texture sample</figcaption></figure>${transfer?'<figure><img data-input="target" alt="Selected target image" width="128" height="128"><figcaption>Target structure</figcaption></figure>':''}</div>
+        <div class="graphics-lab__inputs"><figure><img data-input="source" src="${assetsBase}/${transfer?'pebbles':'foliage'}.webp" alt="Selected source texture" width="128" height="128"><figcaption>Texture sample</figcaption></figure>${transfer?`<figure><img data-input="target" src="${assetsBase}/bust.webp" alt="Selected target image" width="128" height="128"><figcaption>Target structure</figcaption></figure>`:''}</div>
         <label class="graphics-lab__upload">Upload texture<input name="sourceFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
         ${transfer?'<label class="graphics-lab__upload">Upload target<input name="targetFile" type="file" accept="image/png,image/jpeg,image/webp"></label>':''}
         <small>PNG, JPEG or WebP, up to 12 MB. Images stay in your browser.</small>
@@ -27,6 +26,13 @@ export function mountLab(host,{mode='quilting',assetsBase='./web/assets',workerF
       <p class="graphics-lab__error" role="alert" hidden></p>
       <p class="graphics-lab__caption">${transfer?'Every output pixel comes from the texture sample. The target only guides which patches are selected.':'Patches are matched by overlap error. The seam follows a minimum-cost path through that error map.'}</p>
     </div>`;
+}
+
+/** The standalone demos and portfolio import this same UI and worker implementation. */
+export function mountLab(host,{mode='quilting',assetsBase='./web/assets',workerFactory=()=>new Worker(new URL('./worker.js',import.meta.url),{type:'module'})}={}) {
+  const transfer=mode==='transfer';
+  host.classList.add('graphics-lab');
+  host.innerHTML=labMarkup({mode,assetsBase});
   const form=host.querySelector('form'), canvas=host.querySelector('canvas'), context=canvas.getContext('2d');
   const poster=host.querySelector('[data-poster]'),status=host.querySelector('[role=status]'),error=host.querySelector('[role=alert]');
   const run=host.querySelector('[data-run]'),cancel=host.querySelector('[data-cancel]'),exportButton=host.querySelector('[data-export]'),seamButton=host.querySelector('[data-view=seams]');
