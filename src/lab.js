@@ -8,21 +8,22 @@ export function labMarkup({mode='quilting',assetsBase='./web/assets'}={}) {
         <div class="graphics-lab__inputs"><figure><img data-input="source" src="${assetsBase}/${transfer?'pebbles':'foliage'}.webp" alt="Selected source texture" width="128" height="128"><figcaption>Texture sample</figcaption></figure>${transfer?`<figure><img data-input="target" src="${assetsBase}/bust.webp" alt="Selected target image" width="128" height="128"><figcaption>Target structure</figcaption></figure>`:''}</div>
         <label class="graphics-lab__upload">Upload texture<input name="sourceFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
         ${transfer?'<label class="graphics-lab__upload">Upload target<input name="targetFile" type="file" accept="image/png,image/jpeg,image/webp"></label>':''}
-        <small>PNG, JPEG or WebP, up to 12 MB. Images stay in your browser.</small>
+        <small>PNG, JPEG or WebP, up to 12 MB. Images stay in your browser. Textures are center-cropped and sampled at 256 × 256 for processing.</small>
       </fieldset>
       <fieldset><legend>${transfer?'Transfer settings':'Quilting settings'}</legend>
-        <div class="graphics-lab__pair"><label>Patch size<select name="patch"><option>16</option><option>24</option><option selected>36</option><option>48</option><option>64</option></select></label><label>Output<select name="size"><option value="256">256 × 256</option><option value="384">384 × 384</option><option value="512">512 × 512</option></select></label></div>
+        <div class="graphics-lab__pair"><label>Patch size<select name="patch">${transfer?'<option>16</option><option>24</option><option selected>36</option><option>48</option><option>64</option>':'<option>64</option><option>128</option><option>192</option><option selected>240</option><option>256</option>'}</select></label><label>Output<select name="size">${transfer?'<option value="256">256 × 256</option><option value="384">384 × 384</option><option value="512">512 × 512</option>':'<option value="512">512 × 512</option><option value="768">768 × 768</option><option value="1024" selected>1024 × 1024</option><option value="1536">1536 × 1536</option><option value="2048">2048 × 2048</option>'}</select></label></div>
+        ${transfer?'':'<small data-scale>256 × 256 texture → 1024 × 1024 output · 16× the area. Each 240px patch spans 94% of the texture’s width.</small>'}
         <label>Overlap <output data-value="overlap">17%</output><input name="overlap" type="range" min="10" max="40" value="17"></label>
         ${transfer?'<label>Target structure <output data-value="structure">75%</output><input name="structure" type="range" min="10" max="95" value="75"></label><label>Refinement passes<select name="passes"><option>1</option><option>2</option><option selected>3</option></select></label>':'<label>Join method<select name="method"><option value="cut">Minimum-error seam</option><option value="straight">Straight overlap</option><option value="random">Random patches</option></select></label>'}
         <div class="graphics-lab__pair"><label>Candidate patches<select name="candidates"><option value="384">384</option><option value="768">768</option><option value="1536">1,536</option></select></label><label>Seed<input name="seed" value="42" maxlength="32" autocomplete="off"></label></div>
-        <small>${transfer?'Higher structure favors the target’s tones. Smaller patches resolve finer details.':'Try all three join methods with the same seed to compare how boundaries change.'}</small>
+        <small>${transfer?'Higher structure favors the target’s tones. Smaller patches resolve finer details.':'Compare joins with the same seed. A 256px patch repeats the whole texture, so the seed has no effect. Larger outputs and more candidates take longer; you can cancel a run.'}</small>
       </fieldset>
       <div class="graphics-lab__actions"><button type="submit" data-run>Run ${transfer?'transfer':'quilting'}</button><button type="button" data-cancel hidden>Cancel</button></div>
     </form>
     <div class="graphics-lab__result">
       <div class="graphics-lab__toolbar" role="group" aria-label="Output display"><button type="button" data-view="result" aria-pressed="true">Result</button><button type="button" data-view="seams" aria-pressed="false" disabled>Show seams</button><button type="button" data-export disabled>Save PNG</button></div>
-      <div class="graphics-lab__canvas"><img data-poster src="${assetsBase}/${transfer?'transfer':'quilting'}-result.webp" alt="Example ${transfer?'sculpture reconstructed from pebble patches':'foliage synthesized from overlapping patches'}" width="512" height="512"><canvas hidden width="256" height="256" aria-label="${transfer?'Texture transfer':'Image quilting'} output"></canvas></div>
-      <p class="graphics-lab__status" role="status" aria-live="polite">Example output. Choose settings, then run the study.</p>
+      <div class="graphics-lab__canvas"><img data-poster src="${assetsBase}/${transfer?'transfer':'quilting'}-result.webp" alt="Example ${transfer?'sculpture reconstructed from pebble patches':'1024px foliage texture expanded from overlapping near-full copies of a 256px sample'}" width="${transfer?512:1024}" height="${transfer?512:1024}"><canvas hidden width="${transfer?256:1024}" height="${transfer?256:1024}" aria-label="${transfer?'Texture transfer':'Image quilting'} output"></canvas></div>
+      <p class="graphics-lab__status" role="status" aria-live="polite">${transfer?'Example output.':'Example: 256 × 256 texture → 1024 × 1024 output.'} Choose settings, then run the study.</p>
       <p class="graphics-lab__error" role="alert" hidden></p>
       <p class="graphics-lab__caption">${transfer?'Every output pixel comes from the texture sample. The target only guides which patches are selected.':'Patches are matched by overlap error. The seam follows a minimum-cost path through that error map.'}</p>
     </div>`;
@@ -48,6 +49,10 @@ export function mountLab(host,{mode='quilting',assetsBase='./web/assets',workerF
   };
   const refreshLabels=()=>{
     for(const output of host.querySelectorAll('[data-value]'))output.value=`${form.elements[output.dataset.value].value}%`;
+    if(!transfer) {
+      const size=Number(form.elements.size.value),patch=Number(form.elements.patch.value);
+      host.querySelector('[data-scale]').textContent=`256 × 256 texture → ${size} × ${size} output · ${(size/256)**2}× the area. Each ${patch}px patch spans ${Math.round(patch/256*100)}% of the texture’s width.`;
+    }
   };
   const lock=busy=>{
     for(const fieldset of form.querySelectorAll('fieldset'))fieldset.disabled=busy;

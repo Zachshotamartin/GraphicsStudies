@@ -4,32 +4,30 @@
     "source": "foliage",
     "method": "cut",
     "options": {
-      "size": 256,
-      "patchSize": 36,
-      "overlap": 6,
+      "size": 1024,
+      "patchSize": 240,
+      "overlap": 41,
       "candidateCount": 384,
-      "structure": 0.75,
-      "passes": 3,
+      "passes": 1,
       "seed": "42",
       "method": "cut"
     },
-    "ms": 311.10000002384186
+    "sourceSize": 256
   },
   {
     "name": "quilting-straight",
     "source": "foliage",
     "method": "straight",
     "options": {
-      "size": 256,
-      "patchSize": 36,
-      "overlap": 6,
+      "size": 1024,
+      "patchSize": 240,
+      "overlap": 41,
       "candidateCount": 384,
-      "structure": 0.75,
-      "passes": 3,
+      "passes": 1,
       "seed": "42",
       "method": "straight"
     },
-    "ms": 276.10000002384186
+    "sourceSize": 256
   },
   {
     "name": "transfer-result",

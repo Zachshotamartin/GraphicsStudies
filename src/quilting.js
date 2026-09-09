@@ -70,8 +70,9 @@ function seamMasks(output, source, x, y, sx, sy, width, height, outputWidth, ove
 export function* quilt({source, target=null, size=256, patchSize=36, overlap=6, candidateCount=384, tolerance=0.1, structure=0.75, passes=3, seed='1', method='cut'}) {
   checkImage(source,'Source');
   if(target) checkImage(target,'Target');
-  if(!Number.isInteger(size)||size<32||size>512) throw new RangeError('Output size must be 32–512');
-  if(!Number.isInteger(patchSize)||patchSize<8||patchSize>Math.min(source.width,source.height,size,96)) throw new RangeError('Invalid patch size');
+  const maxSize=target?512:2048, maxPatch=target?96:256;
+  if(!Number.isInteger(size)||size<32||size>maxSize) throw new RangeError(`Output size must be 32–${maxSize}`);
+  if(!Number.isInteger(patchSize)||patchSize<8||patchSize>Math.min(source.width,source.height,size,maxPatch)) throw new RangeError('Invalid patch size');
   if(!Number.isInteger(overlap)||overlap<1||overlap>=patchSize) throw new RangeError('Overlap must be smaller than the patch');
   if(!Number.isInteger(candidateCount)||candidateCount<1||candidateCount>4096) throw new RangeError('Candidate count must be 1–4096');
   if(!Number.isInteger(passes)||passes<1||passes>5) throw new RangeError('Pass count must be 1–5');
@@ -100,7 +101,9 @@ export function* quilt({source, target=null, size=256, patchSize=36, overlap=6, 
       if(method!=='random') for(let c=0;c<pool.length;c++) {
         const {x:sx,y:sy}=pool[c];
         let local=0,localCount=0,correspondence=0, prior=0;
-        for(let yy=0;yy<h;yy++) for(let xx=0;xx<w;xx++) {
+        // Synthesis scores only the overlap. Skip the unscored interior of large
+        // patches; preserve raster summation order and count the corner once.
+        for(let yy=0;yy<h;yy++) for(let xx=0,end=target||(y&&yy<ov)?w:x?Math.min(ov,w):0;xx<end;xx++) {
           const dst=(y+yy)*size+x+xx, src=(sy+yy)*source.width+sx+xx;
           if((x&&xx<ov)||(y&&yy<ov)) {local+=difference(data,dst*4,source.data,src*4);localCount++;}
           if(target) {const delta=sourceGuide[src]-targetGuide[dst];correspondence+=delta*delta;}

@@ -6,7 +6,8 @@ self.onmessage = ({ data: { id, options } }) => {
     const iterator=quilt(options);
     let step=iterator.next(), last=0;
     while(!step.done) {
-      if(performance.now()-last>90) {
+      // Large exports need fewer preview copies to keep memory traffic bounded.
+      if(performance.now()-last>(options.size>1024?300:90)) {
         const frame=step.value.data.slice();
         self.postMessage({id,type:'progress',...step.value,data:frame,elapsed:performance.now()-started},[frame.buffer]);
         last=performance.now();
