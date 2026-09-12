@@ -106,6 +106,7 @@ export function mountExperiment(
     loadVersion = 0,
     replayFrame = 0,
     deformTimer = 0,
+    treeTimer = 0,
     pointer = null,
     handles = [],
     selected = 0,
@@ -147,6 +148,7 @@ export function mountExperiment(
     worker = null;
     cancelAnimationFrame(replayFrame);
     clearTimeout(deformTimer);
+    clearTimeout(treeTimer);
     setRunning(false);
     $("[data-pause]")?.setAttribute("disabled", "");
   }
@@ -347,7 +349,7 @@ export function mountExperiment(
       worker = workerFactory();
       const start = performance.now();
       worker.onmessage = ({ data: m }) => {
-        if (disposed) return;
+        if (disposed || epoch !== runEpoch) return;
         if (m.type === "error") {
           stop();
           fail(m.message);
@@ -458,6 +460,13 @@ export function mountExperiment(
       if (!disposed) run();
     }, 40);
   };
+  const scheduleTree = () => {
+    stop();
+    message("Updating tree…");
+    treeTimer = setTimeout(() => {
+      if (!disposed) run();
+    }, 180);
+  };
   on($("[data-run]"), "click", run);
   on($("[data-cancel]"), "click", () => {
     stop();
@@ -479,8 +488,11 @@ export function mountExperiment(
     $("[data-download]").disabled = true;
     for (const button of $$("[data-svg],[data-replay]")) button.disabled = true;
     error.hidden = true;
-    ensureInputs().catch((e) => fail(e.message));
-    message("Sample inputs and controls restored.");
+    if (id === "tree-growth") run();
+    else {
+      ensureInputs().catch((e) => fail(e.message));
+      message("Sample inputs and controls restored.");
+    }
   });
   function paramsChangedReset() {
     for (const c of s.controls) {
@@ -503,6 +515,7 @@ export function mountExperiment(
           params: { viscosity: params.viscosity, diffusion: params.diffusion },
         });
       if (id === "image-deformation") scheduleDeform();
+      if (id === "tree-growth") scheduleTree();
       else if (!running)
         message("Controls changed. Run the experiment to update the result.");
     });
@@ -822,7 +835,8 @@ export function mountExperiment(
       pointer = null;
     });
   }
-  ensureInputs().catch((e) => {
+  if (id === "tree-growth") run();
+  else ensureInputs().catch((e) => {
     if (!disposed) fail(e.message);
   });
   return () => {

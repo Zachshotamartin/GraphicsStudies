@@ -166,7 +166,7 @@ export const experiments = [
       range("seed", "Seed", 1, 100, 1, 42),
       select("obstacle", "Avoid obstacle", ["off", "on"], "off"),
     ],
-    hint: "Drag the tree to orbit it. Change the seed or canopy, then grow a different branching structure.",
+    hint: "Drag the tree to orbit it. Changing the seed, canopy, or attraction points automatically grows a new tree.",
     method: [
       "Seed a three-dimensional canopy volume with attraction points.",
       "Grow each branch toward the average direction of nearby unclaimed points.",
